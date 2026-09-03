@@ -1,0 +1,78 @@
+# ============================================================
+# Routing Configuration — Prototype-1
+# ============================================================
+# Multi-objective route optimization parameters.
+#
+# These weights define the trade-off between competing
+# objectives in the vessel-aware route optimizer.
+#
+# IMPORTANT: The values below are PROTOTYPE PLACEHOLDERS
+# only. They have not been tuned or validated against
+# operational requirements.
+# ============================================================
+
+routing:
+
+  # --- Objective Weights ---
+  # Each weight is in [0, 1]. They should sum to 1.0
+  # for a normalized weighted-sum formulation.
+  #
+  # These are initial placeholder values for the
+  # architecture demonstration. They will be tuned in
+  # later phases based on operational requirements and
+  # stakeholder feedback.
+
+  objectives:
+
+    safety:
+      weight: 0.25  # PLACEHOLDER — avoid dangerous conditions
+      description: >
+        General safety of navigation. Higher weight
+        prioritizes routes that avoid hazardous areas.
+
+    fuel_efficiency:
+      weight: 0.20  # PLACEHOLDER — minimize fuel consumption
+      description: >
+        Fuel consumption optimization. Higher weight
+        favors shorter or more fuel-efficient routes.
+
+    eta:
+      weight: 0.15  # PLACEHOLDER — minimize travel time
+      description: >
+        Time to destination. Higher weight favors
+        faster routes regardless of fuel cost.
+
+    iceberg_risk:
+      weight: 0.20  # PLACEHOLDER — avoid iceberg proximity
+      description: >
+        Proximity risk from icebergs along the route.
+        Higher weight increases avoidance distance from
+        predicted iceberg positions.
+
+    sea_ice_risk:
+      weight: 0.10  # PLACEHOLDER — avoid heavy sea ice
+      description: >
+        Risk from sea-ice concentration along the route.
+        Higher weight avoids areas with high sea-ice
+        concentration.
+
+    uncertainty_penalty:
+      weight: 0.10  # PLACEHOLDER — avoid uncertain regions
+      description: >
+        Penalizes routes through areas with high
+        prediction uncertainty. Encourages conservative
+        routing when forecasts are unreliable.
+
+  # --- Constraints ---
+  constraints:
+    max_heading_change_per_step_degrees: 45  # PLACEHOLDER
+    min_distance_from_iceberg_km: 5.0  # PLACEHOLDER
+    max_sea_ice_concentration_threshold: 0.7  # PLACEHOLDER (0-1 scale)
+    min_water_depth_m: 50  # PLACEHOLDER — avoid shallow grounding
+
+  # --- Search Parameters ---
+  search:
+    algorithm: "TBD — candidates include A*, RRT*, or custom grid search"
+    grid_resolution_degrees: 0.05  # PLACEHOLDER (~5 km)
+    time_step_hours: 6  # PLACEHOLDER
+    num_waypoints: "TBD"

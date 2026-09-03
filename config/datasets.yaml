@@ -1,0 +1,195 @@
+# ============================================================
+# Dataset Configuration — Prototype-1
+# ============================================================
+# Structured registry of the six Phase-1 priority data sources.
+# Each entry records the verified findings from Phase 1:
+# whether it was acquired, the authentication requirement, and
+# the paths for raw/processed data.
+#
+# Never claim a dataset is acquired unless it actually is.
+# Auth-gated datasets are recorded as "requires_manual_auth".
+# ============================================================
+
+datasets:
+
+  # --- Sea Ice (NSIDC) ---
+  sea_ice:
+    category: "sea_ice"
+    description: >
+      NSIDC passive-microwave sea-ice concentration. Daily ~25 km.
+      Requires a free NASA Earthdata Login.
+    provider: "NSIDC DAAC"
+    product_name: "NSIDC-0051 (NASA Team) / NSIDC-0079 (Bootstrap) / NSIDC-0081 (NRT)"
+    variables:
+      - sea_ice_concentration
+      - sea_ice_extent
+    spatial_resolution: "~25 km (polar stereographic)"
+    temporal_resolution: "daily"
+    coverage: "Polar regions, 1978-present"
+    access_method: "NASA Earthdata Login + NSIDC DAAC HTTPS/OpenDAP"
+    license: "NSIDC data use policies; free registration"
+    prototype_usage: >
+      Sea-ice boundary and concentration for the East Prydz Bay
+      operational area. Used for sea-ice risk and route optimization
+      in future phases.
+    acquired: false
+    requires_manual_auth: true
+    auth_action: >
+      Register at https://urs.earthdata.nasa.gov, approve NSIDC DAAC,
+      set NSIDC_USERNAME/NSIDC_PASSWORD, run scripts/data/download_sea_ice.py
+    raw_dir: "data/raw/sea_ice"
+    processed_dir: "data/processed/sea_ice"
+    status_note: "Blocked on credentials; server unreachable from build env."
+
+  # --- Iceberg Tracks (NIC) ---
+  iceberg_tracks:
+    category: "iceberg_tracking"
+    description: >
+      US National Ice Center Antarctic iceberg positions, weekly
+      CSV archive. Public, no authentication.
+    provider: "US National Ice Center (usicecenter.gov)"
+    product_name: "NIC Antarctic Icebergs CSV archive"
+    variables:
+      - iceberg_latitude
+      - iceberg_longitude
+      - iceberg_name_id
+      - observation_timestamp
+      - length_nm
+      - width_nm
+    spatial_resolution: "Point observations"
+    temporal_resolution: "weekly archive snapshots, 2014-11 to 2026-08"
+    coverage: "Antarctic waters"
+    access_method: "Public HTTP (usicecenter.gov archive search)"
+    license: "Public U.S. Government data; attribution to NIC appreciated"
+    prototype_usage: >
+      Historical iceberg positions for trajectory model training and
+      evaluation in the East Prydz Bay region.
+    acquired: true
+    requires_manual_auth: false
+    raw_dir: "data/raw/icebergs"
+    processed_dir: "data/processed/icebergs"
+    processed_file: "east_prydz_bay_icebergs.csv"
+    record_counts:
+      total_raw_records: 27759
+      east_prydz_bay_records: 796
+      unique_icebergs_in_region: 11
+    status_note: "ACQUIRED. Source: US Ice Center (BYU/NIC host unreachable)."
+
+  # --- Meteorological Reanalysis (ERA5) ---
+  meteorological:
+    category: "atmospheric_forcing"
+    description: >
+      ERA5 single-level reanalysis for wind, temperature, pressure,
+      precipitation. Requires ECMWF CDS API key.
+    provider: "ECMWF (Climate Data Store)"
+    product_name: "ERA5 reanalysis-era5-single-levels"
+    variables:
+      - u10m
+      - v10m
+      - temperature_2m
+      - mean_sea_level_pressure
+      - total_precipitation
+    spatial_resolution: "~0.25 deg (~31 km)"
+    temporal_resolution: "hourly"
+    coverage: "Global, 1940-present"
+    access_method: "ECMWF CDS API v2 (key <uid>:<token>)"
+    license: "ECMWF licence terms; free registration"
+    prototype_usage: >
+      Atmospheric forcing (wind) for iceberg drift and sea-ice
+      forecasting in the East Prydz Bay region.
+    acquired: false
+    requires_manual_auth: true
+    auth_action: >
+      Register at https://cds.climate.copernicus.eu, generate API key,
+      set CDS_API_URL/CDS_API_KEY, run scripts/data/download_weather.py
+    raw_dir: "data/raw/weather"
+    processed_dir: "data/processed/weather"
+    status_note: "Blocked on credentials. Legacy CDS API v2 deprecated."
+
+  # --- Ocean Reanalysis (GLORYS) ---
+  ocean:
+    category: "ocean_forcing"
+    description: >
+      GLORYS ocean reanalysis for surface currents and SST. Requires
+      a free Copernicus Marine (CMEMS) account.
+    provider: "Copernicus Marine Service (CMEMS)"
+    product_name: "GLORYS12V1 (1/12 deg daily)"
+    variables:
+      - ocean_current_u
+      - ocean_current_v
+      - sea_surface_temperature
+    spatial_resolution: "1/12 deg (~8 km)"
+    temporal_resolution: "daily"
+    coverage: "Global ocean"
+    access_method: "CMEMS Marine Data Store (Motu/OData)"
+    license: "CMEMS data access terms; free registration"
+    prototype_usage: >
+      Ocean-current forcing for iceberg trajectory prediction in the
+      East Prydz Bay region.
+    acquired: false
+    requires_manual_auth: true
+    auth_action: >
+      Register at https://data.marine.copernicus.eu/register, subscribe
+      to GLORYS12V1, set CMEMS_USERNAME/CMEMS_PASSWORD,
+      run scripts/data/download_ocean.py
+    raw_dir: "data/raw/ocean"
+    processed_dir: "data/processed/ocean"
+    status_note: "Blocked on credentials."
+
+  # --- Bathymetry (GEBCO) ---
+  bathymetry:
+    category: "bathymetry"
+    description: >
+      GEBCO_2024 gridded bathymetry (15 arc-second). Static seafloor
+      depth. Public, no authentication. Subset via CEDA OPeNDAP.
+    provider: "GEBCO via CEDA"
+    product_name: "GEBCO_2024 sub-ice topography grid"
+    variables:
+      - elevation  # metres; negative = depth
+    spatial_resolution: "15 arc-second (~450 m)"
+    temporal_resolution: "static (release-based)"
+    coverage: "Global ocean"
+    access_method: "CEDA OPeNDAP server-side subsetting (no auth)"
+    license: "GEBCO data licence; free and open"
+    prototype_usage: >
+      Seafloor depth for grounding-risk assessment and shallow-water
+      navigation constraints in the East Prydz Bay region.
+    acquired: true
+    requires_manual_auth: false
+    raw_dir: "data/raw/bathymetry"
+    processed_dir: "data/processed/bathymetry"
+    processed_file: "east_prydz_bay_bathymetry_15arcsec.nc"
+    subset_shape: "960 x 1920"
+    status_note: "ACQUIRED. Full global grid not stored (7.4 GB); OPeNDAP subset used."
+
+  # --- SAR Imagery (Sentinel-1) ---
+  sar_imagery:
+    category: "satellite_imagery"
+    description: >
+      Sentinel-1 C-band SAR. EW_GRDM (~40 m, dual-pol) recommended for
+      iceberg detection. Catalog public; download requires Copernicus
+      Data Space account.
+    provider: "ESA / Copernicus Programme"
+    product_name: "Sentinel-1 EW_GRDM (recommended)"
+    variables:
+      - sar_intensity
+      - sar_polarization  # dual-pol DH
+    spatial_resolution: "~40 m (EW_GRDM)"
+    temporal_resolution: "~3 day polar revisit"
+    coverage: "Global; polar enhanced revisit"
+    access_method: "Copernicus Data Space OData API (OAuth2 for download)"
+    license: "Copernicus data licence (free and open)"
+    prototype_usage: >
+      Input for future SAR-based iceberg detection (YOLO) in a later
+      phase. Not used in Prototype-1 architecture demonstration.
+    acquired: false
+    requires_manual_auth: true
+    auth_action: >
+      Register at https://dataspace.copernicus.eu, set
+      COPERNICUS_USERNAME/COPERNICUS_PASSWORD, then download a small
+      number of representative EW_GRDM scenes.
+    raw_dir: "data/raw/sar"
+    processed_dir: "data/processed/sar"
+    acquisition_metadata: "data/raw/sar/sentinel1_acquisition_metadata.json"
+    scene_count_in_bbox: 15030  # EW-mode scenes, verified via OData
+    status_note: "Investigated; download returns HTTP 401 without credentials."

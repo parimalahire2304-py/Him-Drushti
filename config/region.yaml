@@ -1,0 +1,37 @@
+# ============================================================
+# Region Configuration — Prototype-1
+# ============================================================
+# East Prydz Bay, East Antarctica
+# This is a configurable prototype bounding box for
+# demonstration purposes only. It is NOT an official
+# geographic or operational boundary.
+# ============================================================
+
+region_name: "East Prydz Bay"
+country_or_region: "East Antarctica"
+
+# --- Bounding Box (degrees) ---
+# Prototype operational area for Phase 1 demonstration.
+bounding_box:
+  south: -70.0
+  north: -66.0
+  west: 72.0
+  east: 80.0
+
+# --- Coordinate Reference System ---
+# WGS 84 is the standard geographic CRS used by GPS and
+# most polar datasets. Adjust if a project-specific CRS
+# is required for future phases.
+coordinate_reference_system: "EPSG:4326"
+
+# --- Timezone ---
+# Antarctica/Troll covers the Troll research station area
+# and is a common reference for East Antarctic operations.
+# Adjust if operational timezone differs.
+timezone: "Antarctica/Troll"
+
+# --- Forecasting ---
+# Default forecast horizon in hours.
+# This value will drive sea-ice and trajectory prediction
+# windows in future phases.
+default_forecast_horizon_hours: 72

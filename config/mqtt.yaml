@@ -1,0 +1,96 @@
+# ============================================================
+# MQTT Configuration — Prototype-1
+# ============================================================
+# MQTT communication parameters for the Laptop 1 (Offshore
+# AI Server) → Laptop 2 (Onboard Ship DSS) data link.
+#
+# DO NOT connect to any broker in Phase 0. This file
+# defines the configuration structure for future use.
+#
+# All values below are PLACEHOLDERS.
+# ============================================================
+
+mqtt:
+
+  # --- Broker ---
+  broker:
+    host: "localhost"  # PLACEHOLDER — set to actual broker address
+    port: 1883  # PLACEHOLDER — standard MQTT port (8883 for TLS)
+    transport: "tcp"  # PLACEHOLDER — tcp or websockets
+
+  # --- Authentication ---
+  # NEVER hard-code real credentials. Use environment
+  # variables or a secrets manager in production.
+  authentication:
+    username: "${MQTT_USERNAME}"  # from environment variable
+    password: "${MQTT_PASSWORD}"  # from environment variable
+    tls_enabled: false  # PLACEHOLDER — enable for production
+    ca_cert_path: ""  # PLACEHOLDER — path to CA certificate
+
+  # --- Connection ---
+  connection:
+    keepalive_seconds: 60  # PLACEHOLDER
+    clean_session: true  # PLACEHOLDER
+    reconnect_delay_seconds: 5  # PLACEHOLDER
+    max_reconnect_attempts: 10  # PLACEHOLDER
+
+  # --- Topics ---
+  # Topic hierarchy follows the pattern:
+  #   antarctic/{region}/{layer}/{message_type}
+  topics:
+    server_state:
+      publish: "antarctic/east_prydz/server/state"
+      qos: 1
+      description: "Full server state published periodically"
+
+    sea_ice_forecast:
+      publish: "antarctic/east_prydz/environment/sea_ice"
+      qos: 1
+      description: "Sea-ice forecast updates"
+
+    iceberg_observations:
+      publish: "antarctic/east_prydz/icebergs/observations"
+      qos: 1
+      description: "Current iceberg positions and detections"
+
+    iceberg_trajectories:
+      publish: "antarctic/east_prydz/icebergs/trajectories"
+      qos: 1
+      description: "Predicted iceberg trajectories"
+
+    risk_assessment:
+      publish: "antarctic/east_prydz/risk/assessment"
+      qos: 1
+      description: "Probabilistic risk assessment updates"
+
+    route_recommendations:
+      publish: "antarctic/east_prydz/routes/recommendations"
+      qos: 1
+      description: "Optimized route recommendations"
+
+    alerts:
+      publish: "antarctic/east_prydz/alerts"
+      qos: 2  # QoS 2 for critical alerts — exactly once delivery
+      description: "Safety and operational alerts"
+
+    vessel_position:
+      subscribe: "antarctic/east_prydz/vessel/position"
+      qos: 1
+      description: "Vessel GPS position from onboard system"
+
+    system_status:
+      publish: "antarctic/east_prydz/system/status"
+      qos: 0
+      description: "System health and heartbeat"
+
+  # --- Client IDs ---
+  # Each MQTT client must have a unique ID.
+  client_ids:
+    server_publisher: "antarctic-server-east-prydz"
+    dss_subscriber: "antarctic-dss-onboard"
+
+  # --- Message Format ---
+  message_format:
+    encoding: "json"
+    compression: "none"  # PLACEHOLDER — options: none, gzip
+    max_message_size_kb: 1024  # PLACEHOLDER

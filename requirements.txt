@@ -1,0 +1,31 @@
+# ============================================================
+# Python dependencies — Prototype-1
+# ============================================================
+# Phase 0 only requires basic utilities for configuration
+# loading and project structure verification.
+#
+# Heavy ML/data packages (PyTorch, TensorFlow, xarray,
+# satpy, etc.) will be added in the phases that need them,
+# NOT in Phase 0.
+
+# --- Core ---
+pyyaml>=6.0
+
+# --- Configuration loading / env ---
+python-dotenv>=1.0
+
+# --- Testing (added in the phase that introduces tests) ---
+# pytest>=8.0
+
+# --- Linting / formatting (development) ---
+# ruff>=0.4
+
+# --- ML / data (ADD IN LATER PHASES, NOT NOW) ---
+# numpy
+# pandas
+# xarray
+# netCDF4
+# torch / tensorflow
+# scikit-learn
+# matplotlib
+# paho-mqtt

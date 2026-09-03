@@ -1,0 +1,63 @@
+# ============================================================
+# Vessel Configuration — Prototype-1
+# ============================================================
+# Configurable vessel parameters for route optimization.
+#
+# All values below are DEMO/PLACEHOLDER values for the
+# architecture demonstration. They do not represent any
+# specific real vessel.
+# ============================================================
+
+vessel:
+
+  # --- Identity ---
+  name: "Research Vessel Demo"
+  IMO_number: "DEMO-0000000"  # PLACEHOLDER
+  vessel_type: "ice-strengthened research vessel"  # PLACEHOLDER
+
+  # --- Operational Parameters ---
+  cruising_speed:
+    value: 12.0  # PLACEHOLDER (knots)
+    unit: "knots"
+    description: "Typical cruising speed in open water"
+
+  maximum_speed:
+    value: 15.0  # PLACEHOLDER (knots)
+    unit: "knots"
+    description: "Maximum speed under normal conditions"
+
+  fuel_consumption:
+    cruising: 45.0  # PLACEHOLDER (tonnes per day)
+    unit: "tonnes_per_day"
+    description: "Fuel consumption at cruising speed"
+
+  # --- Physical Parameters ---
+  draft:
+    value: 8.0  # PLACEHOLDER (meters)
+    unit: "meters"
+    description: "Maximum draft — navigation depth constraint"
+
+  length_overall:
+    value: 100.0  # PLACEHOLDER (meters)
+    unit: "meters"
+
+  beam:
+    value: 18.0  # PLACEHOLDER (meters)
+    unit: "meters"
+
+  # --- Range ---
+  maximum_operating_range:
+    value: 12000  # PLACEHOLDER (nautical miles)
+    unit: "nautical_miles"
+    description: "Maximum range on a full fuel load"
+
+  fuel_capacity:
+    value: 800  # PLACEHOLDER (tonnes)
+    unit: "tonnes"
+
+  # --- Ice Capability ---
+  ice_class: "PC5 or equivalent"  # PLACEHOLDER
+  description: >
+    Ice class is a placeholder. Actual ice class will
+    determine operational limits in sea ice. This affects
+    the sea-ice risk thresholds in routing configuration.

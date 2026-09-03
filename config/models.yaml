@@ -1,0 +1,140 @@
+# ============================================================
+# Model Configuration — Prototype-1
+# ============================================================
+# Configuration placeholders for all planned ML models.
+# No models are implemented in Phase 0.
+#
+# Each model block defines:
+#   - task description
+#   - planned architecture family
+#   - input/output shape expectations
+#   - training configuration placeholders
+#   - evaluation placeholders
+# ============================================================
+
+models:
+
+  # --- Sea-Ice Forecasting ---
+  sea_ice_forecasting:
+    task: "Predict sea-ice concentration evolution"
+    description: >
+      Forecasts sea-ice concentration fields for the
+      East Prydz Bay region over a configurable horizon.
+    planned_architecture: "TBD — candidates include ConvLSTM, U-Net, or Transformer-based"
+    inputs:
+      - sea_ice_concentration  # time series of gridded fields
+      - wind_u_10m
+      - wind_v_10m
+      - ocean_current_u
+      - ocean_current_v
+      - temperature_2m
+    outputs:
+      - forecasted_sea_ice_concentration
+    spatial_extent: "East Prydz Bay bounding box"
+    forecast_horizon_hours: 72  # default, configurable via region.yaml
+    training:
+      status: "NOT IMPLEMENTED"
+      strategy: "TBD — chronological train/validation/test split"
+      loss_function: "TBD"
+      optimizer: "TBD"
+      epochs: "TBD"
+      batch_size: "TBD"
+    evaluation:
+      status: "NOT IMPLEMENTED"
+      metrics:
+        - RMSE
+        - MAE
+        - structural_similarity_index
+      validation_approach: "TBD — chronological split required"
+
+  # --- Iceberg Detection (SAR) ---
+  iceberg_detection:
+    task: "Detect and segment icebergs in SAR imagery"
+    description: >
+      Identifies iceberg targets in Sentinel-1 SAR imagery
+      using deep learning segmentation or detection.
+    planned_architecture: "TBD — candidates include U-Net, Mask R-CNN, or YOLO-based"
+    inputs:
+      - sar_intensity
+      - sar_polarization
+    outputs:
+      - iceberg_segmentation_mask
+      - iceberg_bounding_boxes
+      - confidence_scores
+    training:
+      status: "NOT IMPLEMENTED"
+      strategy: "TBD — requires labeled SAR iceberg dataset"
+      loss_function: "TBD"
+      optimizer: "TBD"
+      epochs: "TBD"
+      batch_size: "TBD"
+    evaluation:
+      status: "NOT IMPLEMENTED"
+      metrics:
+        - precision
+        - recall
+        - F1_score
+        - IoU
+      validation_approach: "TBD"
+
+  # --- Iceberg Trajectory Prediction ---
+  iceberg_trajectory:
+    task: "Predict future iceberg positions"
+    description: >
+      Given observed iceberg positions and environmental
+      forcing (wind, ocean currents), predict future
+      trajectory over the forecast horizon.
+    planned_architecture: "TBD — candidates include physics-informed neural network, LSTM, or hybrid"
+    inputs:
+      - iceberg_lat_lon_history
+      - wind_u_10m
+      - wind_v_10m
+      - ocean_current_u
+      - ocean_current_v
+    outputs:
+      - predicted_trajectory_lat_lon
+      - prediction_uncertainty
+    training:
+      status: "NOT IMPLEMENTED"
+      strategy: "TBD — chronological split with hold-out vessels/icebergs"
+      loss_function: "TBD"
+      optimizer: "TBD"
+      epochs: "TBD"
+      batch_size: "TBD"
+    evaluation:
+      status: "NOT IMPLEMENTED"
+      metrics:
+        - mean_absolute_error_km
+        - root_mean_square_error_km
+        - hit_rate_at_threshold
+      validation_approach: "TBD — chronological with spatial hold-out"
+
+  # --- Uncertainty Estimation ---
+  uncertainty_estimation:
+    task: "Quantify prediction uncertainty across models"
+    description: >
+      Estimates uncertainty for sea-ice forecasts and
+      iceberg trajectory predictions. Supports probabilistic
+      risk assessment.
+    planned_architecture: "TBD — candidates include MC-Dropout, Deep Ensemble, or Evidential Deep Learning"
+    inputs:
+      - model_predictions
+      - input_features
+    outputs:
+      - prediction_mean
+      - prediction_variance
+      - confidence_intervals
+    training:
+      status: "NOT IMPLEMENTED"
+      strategy: "TBD"
+      loss_function: "TBD"
+      optimizer: "TBD"
+      epochs: "TBD"
+      batch_size: "TBD"
+    evaluation:
+      status: "NOT IMPLEMENTED"
+      metrics:
+        - calibration_error
+        - sharpness
+        - negative_log_likelihood
+      validation_approach: "TBD"
