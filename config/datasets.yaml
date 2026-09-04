@@ -140,7 +140,7 @@ datasets:
     prototype_usage: >
       Ocean-current forcing for iceberg trajectory prediction in the
       East Prydz Bay region.
-    acquired: false
+    acquired: true
     requires_manual_auth: true
     auth_action: >
       Register at https://data.marine.copernicus.eu/register, subscribe
@@ -148,12 +148,18 @@ datasets:
       run scripts/data/download_ocean.py
     raw_dir: "data/raw/ocean"
     processed_dir: "data/processed/ocean"
+    raw_file: "data/raw/ocean/glorys/cmems_mod_glo_phy_my_0.083deg_P1D-m_1788490478516.nc"
+    n_raw_files: 1
     status_note: >
-      BLOCKED (Phase 2 Step 2). CMEMS identity server
-      (identity.marine.copernicus.eu) is DNS-unreachable from this build
-      environment (verified). No download attempted; no auth bypass. Must be
-      run from a network that can resolve the CMEMS host. Retest: python
-      scripts/data/access_tests/test_glorys.py.
+      ACQUIRED (2026-09-04) — manually downloaded through the Copernicus
+      Marine website (Chrome), NOT via project download_ocean.py (CMEMS
+      identity.marine.copernicus.eu remains DNS-unreachable from the build
+      environment). File: cmems_mod_glo_phy_my_0.083deg_P1D-m_1788490478516.nc
+      (75.8 MB). Validated: 366 daily steps 2020-01-01→2020-12-31, 49x96 grid
+      (1/12 deg), surface depth 0.494 m, full East Prydz Bay bbox coverage.
+      Variables uo/vo (m/s), thetao, so, siconc, sithick, usi/vsi, zos, mlotst,
+      bottomT. ~23.8% NaN (land mask). Integrated into Phase 2 Step 3 feature
+      stack as ocean_current_u/ocean_current_v (1/12 deg daily → 0.25 deg hourly).
 
   # --- Bathymetry (GEBCO) ---
   bathymetry:
@@ -218,3 +224,39 @@ datasets:
       2020 window, deliberate: SAR is for later YOLO phase, representative
       subset only). Validated: 3/3 SAFE zips pass CRC; each holds HH+HV
       dual-pol measurement TIFFs. Access via Copernicus Data Space OData.
+
+  # --- Harmonised 2020 Feature Stack (Phase 2 Step 3) ---
+  feature_stack_2020:
+    category: "integrated_features"
+    description: >
+      Single harmonised 2020 hourly forcing/feature stack over East Prydz Bay,
+      built in Phase 2 Step 3 from NSIDC sea-ice, ERA5 weather, GEBCO bathymetry,
+      and GLORYS12V1 ocean currents. GLORYS ocean currents integrated (manual CMEMS
+      download, 2026-09-04).
+    provider: "Multi-source (NSIDC + ECMWF + GEBCO + CMEMS)"
+    product_name: "East Prydz Bay 2020 Harmonised Feature Stack"
+    spatial_resolution: "0.25 deg (~31 km)"
+    temporal_resolution: "hourly"
+    grid_shape: "8784 time x 17 lat x 33 lon"
+    crs: "EPSG:4326"
+    temporal_range: "2020-01-01T00:00 to 2020-12-31T23:00 UTC"
+    leap_year: true
+    variables:
+      - sea_ice_concentration
+      - wind_u_10m
+      - wind_v_10m
+      - temperature_2m
+      - mean_sea_level_pressure
+      - total_precipitation
+      - bathymetry_elevation
+      - ocean_current_u
+      - ocean_current_v
+    processed_file: "data/processed/integration/east_prydz_bay_2020_feature_stack.nc"
+    metadata_file: "data/processed/integration/east_prydz_bay_2020_feature_stack_metadata.json"
+    file_size_mb: 201.36
+    validation: "7/7 checks passed (scripts/data/validate_feature_stack.py)"
+    status_note: >
+      COMPLETE (Phase 2 Step 3, 2026-09-04). 9 gridded variables on a common
+      0.25 deg hourly grid. GLORYS ocean currents (uo/vo) resampled 1/12 deg
+      daily → 0.25 deg hourly (nearest-neighbor + forward-fill), integrated.
+      See reports/PHASE2_STEP3_PREPROCESSING_REPORT.md.
