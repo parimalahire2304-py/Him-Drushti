@@ -32,14 +32,20 @@ datasets:
       Sea-ice boundary and concentration for the East Prydz Bay
       operational area. Used for sea-ice risk and route optimization
       in future phases.
-    acquired: false
+    acquired: true
     requires_manual_auth: true
     auth_action: >
       Register at https://urs.earthdata.nasa.gov, approve NSIDC DAAC,
       set NSIDC_USERNAME/NSIDC_PASSWORD, run scripts/data/download_sea_ice.py
     raw_dir: "data/raw/sea_ice"
     processed_dir: "data/processed/sea_ice"
-    status_note: "Blocked on credentials; server unreachable from build env."
+    processed_file: "east_prydz_bay_sea_ice_concentration_2020-01-01_2020-12-31.nc"
+    n_raw_files: 366
+    subset_shape: "366 time x 17 y x 21 x"
+    status_note: >
+      ACQUIRED (Phase 2 Step 2, 2020 analysis window). 366 daily granules
+      downloaded; processed file validated: seasonal cycle Feb min ~0.10,
+      Jul-Sep max ~0.84, melt Dec ~0.55. Flags (pole_hole/land) masked to NaN.
 
   # --- Iceberg Tracks (NIC) ---
   iceberg_tracks:
@@ -97,14 +103,22 @@ datasets:
     prototype_usage: >
       Atmospheric forcing (wind) for iceberg drift and sea-ice
       forecasting in the East Prydz Bay region.
-    acquired: false
+    acquired: true
     requires_manual_auth: true
     auth_action: >
       Register at https://cds.climate.copernicus.eu, generate API key,
       set CDS_API_URL/CDS_API_KEY, run scripts/data/download_weather.py
     raw_dir: "data/raw/weather"
     processed_dir: "data/processed/weather"
-    status_note: "Blocked on credentials. Legacy CDS API v2 deprecated."
+    processed_file: "east_prydz_bay_era5_2020-01-01_2020-12-31.nc"
+    n_raw_files: 12
+    status_note: >
+      ACQUIRED (Phase 2 Step 2, 2020 analysis window). Licence accepted
+      2026-09-04. 12 monthly ZIP archives (CDS mixes instant+accum step-types)
+      processed via _read_month unzip+merge. Combined file: 8784 hourly steps
+      (366 days, leap year), 17x33 grid (0.25 deg bbox), 5 variables
+      (u10/v10/t2m/msl/tp), zero missing values. Processor fixed: ZIP
+      detection, Windows tempdir load+close, merge(compat="override").
 
   # --- Ocean Reanalysis (GLORYS) ---
   ocean:
@@ -134,7 +148,12 @@ datasets:
       run scripts/data/download_ocean.py
     raw_dir: "data/raw/ocean"
     processed_dir: "data/processed/ocean"
-    status_note: "Blocked on credentials."
+    status_note: >
+      BLOCKED (Phase 2 Step 2). CMEMS identity server
+      (identity.marine.copernicus.eu) is DNS-unreachable from this build
+      environment (verified). No download attempted; no auth bypass. Must be
+      run from a network that can resolve the CMEMS host. Retest: python
+      scripts/data/access_tests/test_glorys.py.
 
   # --- Bathymetry (GEBCO) ---
   bathymetry:
@@ -182,7 +201,7 @@ datasets:
     prototype_usage: >
       Input for future SAR-based iceberg detection (YOLO) in a later
       phase. Not used in Prototype-1 architecture demonstration.
-    acquired: false
+    acquired: true
     requires_manual_auth: true
     auth_action: >
       Register at https://dataspace.copernicus.eu, set
@@ -190,6 +209,12 @@ datasets:
       number of representative EW_GRDM scenes.
     raw_dir: "data/raw/sar"
     processed_dir: "data/processed/sar"
-    acquisition_metadata: "data/raw/sar/sentinel1_acquisition_metadata.json"
+    acquisition_metadata: "data/processed/sar/east_prydz_bay_sentinel1_metadata.json"
     scene_count_in_bbox: 15030  # EW-mode scenes, verified via OData
-    status_note: "Investigated; download returns HTTP 401 without credentials."
+    n_scenes_downloaded: 3
+    status_note: >
+      ACQUIRED (Phase 2 Step 2) — 3 representative EW_GRDM 1SDH scenes
+      (~1.28 GB total), acquisition 2026-09-03 (most-recent sample; NOT the
+      2020 window, deliberate: SAR is for later YOLO phase, representative
+      subset only). Validated: 3/3 SAFE zips pass CRC; each holds HH+HV
+      dual-pol measurement TIFFs. Access via Copernicus Data Space OData.

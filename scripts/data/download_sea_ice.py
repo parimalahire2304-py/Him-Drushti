@@ -164,14 +164,19 @@ def download_daily(url: str, token: str, dest: Path) -> Path:
 
 
 def process_one(file: Path) -> xr.Dataset:
-    """Unpack, geolocate, and clip one daily file to the bbox."""
+    """
+    Geolocate and clip one daily file to the bbox.
+
+    NOTE: The NSIDC-0051 v2.0 NetCDF already ships UNPACKED — F17_ICECON is
+    float64 in fraction units (0.0-1.0), with scale_factor already applied.
+    Values above 1.0 (1.004..1.016) correspond to the packed flags 251-254
+    (pole_hole / unused / coast / land) and must be masked to NaN.
+    """
     ds = xr.open_dataset(file)
     packed = ds["F17_ICECON"]
 
-    # Unpack: packed/250 -> fraction (0.0-1.0); flags become NaN with attributes.
-    frac = packed / 250.0
-    # Mask flag values (>250) to NaN.
-    frac = frac.where(packed <= _VALID_MAX)
+    # Flag values (> 1.0 in unpacked units) become NaN with attributes.
+    frac = packed.where(packed <= 1.0)
     frac.attrs["units"] = "fraction (0.0-1.0)"
     frac.attrs["long_name"] = "Sea Ice Concentration (NASA Team)"
     frac.attrs["standard_name"] = "sea_ice_area_fraction"
@@ -291,8 +296,8 @@ def main() -> None:
     logger.info("Valid concentration cells: %d", int(np.isfinite(siconc).sum()))
     logger.info("Concentration range in box: %.3f .. %.3f",
                 float(siconc.min()), float(siconc.max()))
-    logger.info("Flagged (coast/land) cells: %d",
-                int(np.isfinite((combined["sea_ice_concentration"] == np.nan)).sum()))
+    logger.info("Flagged (coast/land/pole) cells: %d",
+                int(np.isnan(combined["sea_ice_concentration"]).sum()))
 
 
 if __name__ == "__main__":
