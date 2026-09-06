@@ -1,0 +1,75 @@
+# ============================================================
+# PHASE 7A — LAPTOP-2 (SHIP / ONBOARD DSS) DEPLOYMENT CONFIG
+# ============================================================
+# SEPARATE deployment configuration for the two-laptop test.
+# This file is NEW and does NOT overwrite the Phase 6 localhost
+# regression config (scripts/communication/communication_config.yaml).
+#
+# broker.host below is LAPTOP-1's LAN/Wi-Fi IPv4 address (the OFFSHORE
+# AI SERVER running Mosquitto). It was determined by `ipconfig` on
+# Laptop-1 (NOT guessed). If Laptop-1's Wi-Fi IP changes, update this
+# value only.
+#
+# All state-machine thresholds and topics are IDENTICAL to Phase 6 so
+# the localhost regression semantics are preserved exactly.
+# ============================================================
+
+communication_state_machine:
+  # --- State thresholds (identical to Phase 6) ---
+  stale_threshold_hours: 48.0
+  comm_loss_threshold_hours: 168.0
+  stale_growth_rate_km_per_h: 0.5
+  stale_growth_cap_km: 120.0
+  comm_loss_growth_factor: 1.5
+
+  # --- Topic names (identical to Phase 6) ---
+  topic_prefix: "himdrushti"
+  topics:
+    observation: "himdrushti/observation"
+    forecast: "himdrushti/forecast"
+    risk: "himdrushti/risk"
+    route: "himdrushti/route"
+    status: "himdrushti/status"
+    replan: "himdrushti/replan"
+
+  # --- Message validation (identical to Phase 6) ---
+  message:
+    required_base_fields:
+      - "message_type"
+      - "timestamp"
+    max_message_age_hours: 720.0
+
+  # --- Broker connection ---
+  # LAPTOP-1 (OFFSHORE AI SERVER) Mosquitto broker, now bound to all
+  # interfaces (Phase 7A enablement). Port 1883 (MQTT default).
+  broker:
+    host: "10.20.231.143"      # <-- Laptop-1 LAN/Wi-Fi IPv4 (from ipconfig)
+    port: 1883
+    keepalive_seconds: 60
+    clean_session: true
+    reconnect_delay_seconds: 5
+    max_reconnect_attempts: 10
+
+  # --- Client IDs ---
+  # NOTE: unique subscriber id so Laptop-2 does not collide with a
+  # Laptop-1 local subscriber (both use "himdrushti-onboard-receiver").
+  client_ids:
+    publisher: "himdrushti-offshore-publisher"   # (used on Laptop-1)
+    subscriber: "himdrushti-onboard-receiver-laptop2"
+
+  # --- QoS (identical to Phase 6) ---
+  qos:
+    observation: 1
+    forecast: 1
+    risk: 1
+    route: 1
+    status: 0
+    replan: 1
+
+  # --- Demo / synthetic labels ---
+  synthetic_label: "SYNTHETIC DEMO — NOT real observations"
+  demo_note: "Phase 7A two-laptop communication test; fabricated for MQTT validation only."
+
+# ============================================================
+# END OF CONFIG
+# ============================================================
