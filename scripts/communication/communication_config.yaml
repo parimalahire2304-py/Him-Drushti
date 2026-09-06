@@ -1,0 +1,71 @@
+# ============================================================
+# PHASE 6 — COMMUNICATION-RESILIENT LAYER CONFIGURATION
+# ============================================================
+# Communication state machine thresholds and MQTT parameters.
+# All values are HEURISTIC PROTOTYPE choices, clearly documented.
+# ============================================================
+
+communication_state_machine:
+  # --- State thresholds ---
+  # FRESH: last observation < freshness_hours old
+  # STALE: freshness_hours <= age < comm_loss_hours
+  # LAST_KNOWN_STATE: age >= comm_loss_hours (COMMUNICATION LOST)
+  # RECOVERY: new valid message received -> returns to FRESH
+  stale_threshold_hours: 48.0        # HEURISTIC: NIC weekly cadence ~ 168h; 48h = 2d early warning
+  comm_loss_threshold_hours: 168.0   # HEURISTIC: one week silence => COMMUNICATION LOST
+  # Staleness growth (used by Phase 4 risk engine; kept here for reference)
+  stale_growth_rate_km_per_h: 0.5    # HEURISTIC: drift allowance growth per stale hour
+  stale_growth_cap_km: 120.0         # HEURISTIC: cap on stale growth term
+  comm_loss_growth_factor: 1.5       # HEURISTIC: extra growth multiplier when comm lost
+
+  # --- Topic names (prefixed from config/mqtt.yaml) ---
+  # Base prefix for all Phase 6 topics
+  topic_prefix: "himdrushti"
+
+  topics:
+    observation: "himdrushti/observation"
+    forecast: "himdrushti/forecast"
+    risk: "himdrushti/risk"
+    route: "himdrushti/route"
+    status: "himdrushti/status"
+    replan: "himdrushti/replan"
+
+  # --- Message validation ---
+  message:
+    # Required fields that must be present in every message type
+    required_base_fields:
+      - "message_type"
+      - "timestamp"
+    # Maximum message age for validation (hours)
+    max_message_age_hours: 720.0     # 30 days - reject obviously stale messages
+
+  # --- Broker connection (uses config/mqtt.yaml values as defaults) ---
+  broker:
+    host: "localhost"
+    port: 1883
+    keepalive_seconds: 60
+    clean_session: true
+    reconnect_delay_seconds: 5
+    max_reconnect_attempts: 10
+
+  # --- Client IDs ---
+  client_ids:
+    publisher: "himdrushti-offshore-publisher"
+    subscriber: "himdrushti-onboard-receiver"
+
+  # --- QoS ---
+  qos:
+    observation: 1
+    forecast: 1
+    risk: 1
+    route: 1
+    status: 0
+    replan: 1
+
+  # --- Demo / synthetic labels ---
+  synthetic_label: "SYNTHETIC DEMO — NOT real observations"
+  demo_note: "Phase 6 communication demo; all values fabricated for validation only."
+
+# ============================================================
+# END OF CONFIGURATION
+# ============================================================
