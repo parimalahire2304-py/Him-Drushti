@@ -177,20 +177,16 @@ class RiskAssessment:
             "envelope_radius_km": self.envelope_radius_km,
             "corridor_radius_km": self.corridor_radius_km,
             "distance_to_vessel_km": self.separation_km,
-            "safety_margin_km": self.separation_km - self.iceberg_sep_for_notes(),
+            "safety_margin_km": self.separation_effective_km,
             "risk_score": round(self.risk_score, 4),
             "risk_class": self.risk_class,
             "data_freshness": self.data_freshness,
             "communication_status": self.communication_status,
             "age_hours": self.age_hours,
-            "synthetic": self.iceberg.synthetic or self.vessel.synthetic or True,
+            "synthetic": self.iceberg.synthetic or self.vessel.synthetic,
             "notes": self.notes,
         }
         return d
-
-    def iceberg_sep_for_notes(self) -> float:
-        # separation already equals vessel->forecast; safety margin is documented
-        return self.separation_km
 
     def to_csv_row(self) -> dict[str, Any]:
         return {
@@ -317,7 +313,10 @@ class RiskEngine:
         sigma_obs = float(self.cfg["uncertainty"]["sigma_obs_km"])
         sigma_env = float(self.cfg["uncertainty"]["sigma_env_km_default"]) \
             if sigma_env_km is None else float(sigma_env_km)
-        sigma_stale = self.sigma_stale(age_h, comm_status)
+        # Staleness growth applies ONLY once the state is STALE or in
+        # LAST-KNOWN-STATE MODE; a FRESH observation carries no stale term.
+        sigma_stale = self.sigma_stale(age_h, comm_status) \
+            if data_freshness != "FRESH" else 0.0
         sigma_total = math.sqrt(sigma_f**2 + sigma_obs**2 + sigma_env**2 + sigma_stale**2)
 
         sep_km = haversine_km(vessel.lat, vessel.lon, forecast.pred_lat, forecast.pred_lon)
