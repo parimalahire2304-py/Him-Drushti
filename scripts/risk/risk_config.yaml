@@ -1,0 +1,175 @@
+# =============================================================================
+# PHASE 4 — UNCERTAINTY-AWARE ICEBERG RISK ENGINE  ·  CONFIGURATION
+# =============================================================================
+# Deterministic, tunable parameters for scripts/risk/risk_engine.py.
+#
+# LABELLING CONVENTION (apply to every number below, see report section 2):
+#   EMPIRICAL      = measured in Phase 3C on the EXPANDED test set
+#                    (data/processed/ml/expanded/models/persistence_metrics.json)
+#   MEASURED       = directly observed in Phase 1 cartridge data (ebro etc.)
+#   HEURISTIC      = prototype choice, clearly documented, NOT statistically validated
+#   SYNTHETIC DEMO = only used inside the labelled DEMO scenario
+# -----------------------------------------------------------------------------
+
+region:
+  lat_min: -70.0
+  lat_max: -66.0
+  lon_min: 72.0
+  lon_max: 80.0
+  crs: EPSG:4326
+  # Project timezone (config/region.yaml). Positions are processed in UTC;
+  # this label is carried into outputs for human readability.
+  timezone: Antarctica/Troll
+
+# ---------------------------------------------------------------------------
+# UNCERTAINTY FORMULATION
+# ---------------------------------------------------------------------------
+# The total uncertainty standard deviation (km) enters the risk formula as:
+#     sigma_total = sqrt( sigma_forecast^2 + sigma_obs^2 + sigma_env^2
+#                         + sigma_stale^2 )
+#
+#   sigma_forecast : EMPIRICAL — validation pos-RMSE of the forecast source at
+#                    reference_horizon_hours, scaled to the requested horizon by
+#                    the (HEURISTIC) horizon_scaling_gamma rule. Anchors come
+#                    from the Phase 3C EXPANDED test residuals of the
+#                    persistence baseline (the reference forecast source):
+#                      drifting (non-D23, n=24)  pos_rmse = 36.004 km @ 168 h
+#                      grounded (D23,     n=30)  pos_rmse =  0.175 km @ 168 h
+#                      zero-shot (C39,    n=9)   pos_rmse = 23.870 km @ 168 h
+#   sigma_obs      : HEURISTIC observation-position noise floor (unit ~ km),
+#                    consistent with the ~1.2 km scatterometer jitter quantified
+#                    in Phase 3E on D23. NOT a validated characterisation of all
+#                    position sources.
+#   sigma_env      : optional caller-supplied environmental-forecast uncertainty,
+#                    default 0 (the empirical residual already absorbs the
+#                    historical environmental variability).
+#   sigma_stale    : data-staleness growth term, see `freshness` section.
+# -----------------------------------------------------------------------------
+uncertainty:
+  empirical_base_file: data/processed/ml/expanded/models/persistence_metrics.json
+  # Forecast sources for which the empirical anchors are legitimate.
+  empirical_sources: ["persistence", "persistence_baseline"]
+  reference_horizon_hours: 168      # EMPIRICAL anchor horizon (7 d, Phase 3C)
+  anchors:
+    drifting_sigma_km: 36.004       # EMPIRICAL pos_rmse, non-grounded (n=24)
+    grounded_sigma_km: 0.175        # EMPIRICAL pos_rmse, D23 (n=30)
+    zero_shot_sigma_km: 23.870      # EMPIRICAL pos_rmse, C39 zero-shot (n=9)
+  # HEURISTIC horizon scaling, random-walk / diffusion analogue
+  # (position variance ~ time  =>  std ~ sqrt(h)). sigma(h) = sigma_ref*(h/h_ref)^gamma.
+  # Gamma is tunable; it is a prototype choice, NOT a validated statistical law.
+  horizon_scaling_gamma: 0.5
+  sigma_obs_km: 1.0                # HEURISTIC positioning-noise floor
+  sigma_env_km_default: 0.0        # caller may override
+  # Conservative documented fallback for forecast sources with no empirical
+  # anchors. Used ONLY with an explicit warning; never presented as validated.
+  fallback_sigma_km: 50.0
+  fallback_sigma_note: >-
+    HEURISTIC conservative fallback for a forecast source that has no Phase 3C
+    validation record. Not statistically validated summary.
+  # Nominal envelope radius = k_sigma * sigma_total. k_sigma = 1.645 would be the
+  # 90th percentile of a Normal distribution, but the underlying distribution is
+  # NOT validated — the envelope is a PROTOTYPE decision-support region and must
+  # not be presented as an exact physical boundary or a validated 90% interval.
+  k_sigma_envelope: 1.645
+  envelope_note: >-
+    PROTOTYPE decision-support envelope (radius = k_sigma x sigma). NOT an exact
+    physical boundary and NOT a statistically validated confidence interval.
+
+# ---------------------------------------------------------------------------
+# RISK SCORE FORMULATION  (deterministic, config-driven, see report §4)
+# ---------------------------------------------------------------------------
+#   sigma_total       = combined uncertainty std (km)   [above]
+#   sep_km            = haversine distance vessel -> forecast position (km)
+#   sep_eff_km        = max(sep_km - safety_buffer_km, 0)  (safety margin)
+#   n_units           = sep_eff_km / sigma_total        (normalised separation)
+#   size_norm         = sqrt(length_nm * width_nm) / reference_size_nm
+#   size_scaling      = min(1 + log2(size_norm), size_scaling_cap)
+#   raw_exposure      = size_scaling * exp(-n_units^2 / 2)
+#   risk_score (0..100) = 100 * min(raw_exposure, 1)
+#
+# Directional properties (all enforced and validated in validate_risk_engine):
+#   risk increases with  separation decrease, uncertainty increase, size increase,
+#   horizon increase, environmental-uncertainty increase, safety-margin decrease;
+#   risk decreases with separation increase, uncertainty decrease, margin increase.
+# Larger iceberg => size_scaling >= 1, so a larger iceberg has risk >= the
+# smaller iceberg at the same geometry (size-monotonic by construction).
+# -----------------------------------------------------------------------------
+risk:
+  reference_size_nm: 5.0           # HEURISTIC normalising size (geometric mean)
+  size_scaling_cap: 3.0            # HEURISTIC cap on the size multiplier
+  safety_buffer_km: 5.0            # = config/routing.yaml min_distance_from_iceberg_km
+  # Prototype decision-support classes. NOT internationally certified maritime
+  # safety standards (not COLREGS/IAMSAR/Polar Code risk categories).
+  classes:
+    LOW:
+      min_score: 0.0
+      note: Prototype class. Separation several sigma above envelope.
+    MODERATE:
+      min_score: 25.0
+      note: Prototype class. Vessel within ~1-1.5 sigma of the envelope edge.
+    HIGH:
+      min_score: 50.0
+      note: Prototype class. Vessel inside or near the uncertainty corridor.
+  class_boundary_note: >-
+    Thresholds 25 / 50 are prototype choices that put the HIGH<->MODERATE
+    boundary near n_units ~ 1 and MODERATE<->LOW near n_units ~ 1.65 at unit
+    size scaling. Tunable; not a certified maritime-risk scale.
+
+# ---------------------------------------------------------------------------
+# COMMUNICATION-RESILIENT STATE MACHINE  (FRESH / STALE / LAST-KNOWN-STATE)
+# ---------------------------------------------------------------------------
+#   FRESH                : last observation < freshness_hours old.
+#   STALE                : freshness_hours <= age < comm_loss_hours.
+#                          sigma_stale grows per documented prototype rule:
+#                          sigma_stale = min(stale_growth_rate_km_per_h * stale_hours,
+#                                            stale_growth_cap_km)
+#   COMMUNICATION LOST   : age >= comm_loss_hours  ->  LAST-KNOWN-STATE MODE.
+#                          Engine keeps the last valid state and continues to
+#                          forecast from it, flagging data_freshness =
+#                          "LAST-KNOWN-STATE MODE" and communication_status =
+#                          "COMMUNICATION LOST"; staleness grows faster by
+#                          comm_loss_growth_factor. NO invented observations.
+#   RECOVERY             : a new observation arrives -> state returns to FRESH
+#                          and the risk is recomputed with the new state.
+# -----------------------------------------------------------------------------
+freshness:
+  freshness_hours: 48.0            # HEURISTIC window (2 d since weekly NIC cadence)
+  comm_loss_hours: 168.0           # HEURISTIC threshold (1 wk of stale silence)
+  stale_growth_rate_km_per_h: 0.5  # HEURISTIC drift-allowance growth
+  stale_growth_cap_km: 120.0       # HEURISTIC cap on the stale growth term
+  comm_loss_growth_factor: 1.5     # HEURISTIC extra growth when comm lost
+
+# ---------------------------------------------------------------------------
+# MULTI-ICEBERG / NAVIGATION LAYER
+# ---------------------------------------------------------------------------
+# Navigation risk layer: a grid over `region` at grid_resolution_degrees
+# (matches config/routing.yaml grid_resolution_degrees = 0.05). Each cell holds:
+#   nav_class  = highest class present at that cell (LOW < MODERATE < HIGH)
+#   max_score  = max risk_score over icebergs whose corridor covers the cell
+# This layer is designed to be consumed later by a routing engine (Phase 4+).
+navigation:
+  grid_resolution_degrees: 0.05
+  score_to_layer_threshold: 5.0    # cells above this score flood to their class
+
+# ---------------------------------------------------------------------------
+# VESSEL PROTOTYPE DEFAULTS  (labelled prototype, from config/vessel.yaml)
+# ---------------------------------------------------------------------------
+vessel_defaults:
+  vessel_id: RV-DEMO               # HEURISTIC prototype identifier
+  draft_m: 8.0                     # prototype
+  speed_knots: 12.0                # prototype cruising speed
+  heading_deg: 180.0               # prototype heading
+  defaults_note: >-
+    Prototype defaults used ONLY when the demo/vessel caller does not supply a
+    vessel state. Not a real vessel.
+
+# ---------------------------------------------------------------------------
+# OUTPUTS  (machine-readable; existing formats preserved — none overwritten)
+# ---------------------------------------------------------------------------
+output:
+  json: outputs/risk/risk_output.json
+  csv: outputs/risk/risk_output.csv
+  demo_dir: outputs/risk/demo
+  figure_dir: outputs/risk/figures
+  demo_figure: outputs/risk/figures/risk_demo_summary.png
+  include_nav_layer: true

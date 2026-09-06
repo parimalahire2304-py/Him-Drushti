@@ -152,15 +152,25 @@ def _extract_date(title: str) -> str | None:
     return None
 
 
-def download_daily(url: str, token: str, dest: Path) -> Path:
-    """Download one daily granule, skipping if already present."""
+def download_daily(url: str, token: str, dest: Path, max_retries: int = 5) -> Path:
+    """Download one daily granule, skipping if already present. Retries on connection errors."""
+    import time
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists() and dest.stat().st_size > 0:
         return dest
-    r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=120)
-    r.raise_for_status()
-    dest.write_bytes(r.content)
-    return dest
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = requests.get(url, headers={"Authorization": f"Bearer {token}"}, timeout=180)
+            r.raise_for_status()
+            dest.write_bytes(r.content)
+            return dest
+        except (requests.ConnectionError, requests.Timeout) as exc:
+            logger.warning("Attempt %d/%d failed for %s: %s", attempt, max_retries, dest.name, exc)
+            if attempt < max_retries:
+                wait = min(30, 5 * attempt)
+                logger.info("Retrying in %ds...", wait)
+                time.sleep(wait)
+    raise RuntimeError(f"Failed to download {dest.name} after {max_retries} attempts")
 
 
 def process_one(file: Path) -> xr.Dataset:
