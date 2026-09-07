@@ -1,0 +1,50 @@
+import React from "react";
+
+const NAV = [
+  { id: "overview", label: "Overview",               icon: "◈" },
+  { id: "iceberg",  label: "Iceberg Intelligence",   icon: "▣" },
+  { id: "forecast", label: "Trajectory Forecast",    icon: "➤" },
+  { id: "risk",     label: "Risk & Uncertainty",     icon: "⚠" },
+  { id: "comm",     label: "Communication",          icon: "⇄" },
+  { id: "route",    label: "Route Decision",         icon: "⌖" },
+];
+
+export default function Sidebar({ active, onSelect }) {
+  return (
+    <aside className="w-52 shrink-0 border-r border-hds-border bg-hds-panel flex flex-col">
+      <nav className="flex-1 py-3">
+        <ul className="space-y-1 px-2">
+          {NAV.map((item) => {
+            const isActive = active === item.id;
+            return (
+              <li key={item.id}>
+                <button
+                  onClick={() => onSelect(item.id)}
+                  className={
+                    "cursor-pointer w-full flex items-center gap-2.5 px-3 py-2 text-left text-xs font-mono transition-colors border-l-2 " +
+                    (isActive
+                      ? "border-hds-cyan text-hds-cyan bg-hds-blue/10"
+                      : "border-transparent text-hds-text hover:text-white hover:bg-hds-blue/5")
+                  }
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <span className="text-sm w-4 text-center opacity-70">{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <div className="px-4 py-3 border-t border-hds-border">
+        <p className="text-[9px] font-mono text-hds-dim leading-relaxed">
+          MQTT = prototype / SATCOM
+          <br />
+          emulation · EPSG:4326
+          <br />
+          East Prydz Bay
+        </p>
+      </div>
+    </aside>
+  );
+}

@@ -49,7 +49,7 @@ COMM_DIR = _find_comm_dir()
 
 sys.path.insert(0, str(COMM_DIR))
 
-from flask import Flask, Response, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_from_directory
 from onboard_receiver import OnboardReceiver, LatestState
 from state_manager import CommunicationStateMachine, CommState
 from transport import PahoTransport
@@ -221,9 +221,22 @@ def _compute_age() -> float | None:
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
+# Phase 7D: when the React production bundle has been built, serve it at "/";
+# otherwise fall back to the Phase 7B Jinja template (rollback path).
+REACT_DIST = DASHBOARD_DIR / "react" / "dist"
+
+
 @app.route("/")
 def index():
+    if (REACT_DIST / "index.html").is_file():
+        return send_from_directory(str(REACT_DIST), "index.html")
     return render_template("index.html")
+
+
+@app.route("/assets/<path:filename>")
+def assets(filename):
+    """Serve the React production bundle's hashed asset files."""
+    return send_from_directory(str(REACT_DIST / "assets"), filename)
 
 
 @app.route("/api/state")
