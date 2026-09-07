@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Him-Drushti — Antarctic Maritime Decision Support</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="app" class="layout">
+
+    <!-- ── HEADER ─────────────────────────────────────────────────────── -->
+    <header class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">HIM-DRUSHTI</div>
+        <div class="hdr-subtitle">ANTARCTIC MARITIME DECISION SUPPORT</div>
+      </div>
+      <div class="hdr-center">
+        <div id="commBadge" class="comm-badge" data-state="FRESH">
+          <span class="dot"></span>
+          <span id="commStateLabel" class="comm-state-text">FRESH</span>
+          <span id="commReason" class="comm-reason"></span>
+        </div>
+      </div>
+      <div class="hdr-right">
+        <div id="lastUpdateTxt" class="hdr-meta">Waiting for MQTT data…</div>
+        <div id="modelBadge" class="hdr-meta tiny">—</div>
+      </div>
+    </header>
+
+    <!-- ── LEFT NAV ───────────────────────────────────────────────────── -->
+    <nav class="nav">
+      <button class="nav-item active" data-view="overview"    title="Overview">          <span class="nav-icon">⊡</span> <span>Overview</span></button>
+      <button class="nav-item"        data-view="iceberg"     title="Iceberg">           <span class="nav-icon">◈</span> <span>Iceberg</span></button>
+      <button class="nav-item"        data-view="trajectory"  title="Trajectory">        <span class="nav-icon">⟐</span> <span>Trajectory</span></button>
+      <button class="nav-item"        data-view="risk"        title="Risk">              <span class="nav-icon">⚑</span> <span>Risk</span></button>
+      <button class="nav-item"        data-view="route"       title="Route">             <span class="nav-icon">⛙</span> <span>Route</span></button>
+      <button class="nav-item"        data-view="comms"       title="Communication">     <span class="nav-icon">◉</span> <span>Communication</span></button>
+      <div class="nav-footer">MQTT = prototype / SATCOM emulation</div>
+    </nav>
+
+    <!-- ── MAIN ───────────────────────────────────────────────────────── -->
+    <main class="main">
+
+      <!--  OVERVIEW ──────────────────────────────────────────────────── -->
+      <section class="view active" id="view-overview">
+        <div class="grid grid-map-plus-panels">
+          <div class="card map-card">
+            <div class="card-h">
+              <span class="card-title">East Prydz Bay — Operational Map</span>
+              <span class="card-tag">EPSG:4326  &nbsp; Lat −70 → −66  &nbsp; Lon 72 → 80</span>
+            </div>
+            <div id="map" class="map"></div>
+            <div class="map-legend" id="mapLegend"></div>
+          </div>
+
+          <div class="side-col">
+            <div class="card" id="kObs">
+              <div class="card-h"><span class="card-title">Iceberg Observation</span><span class="live-dot live-dot-amber" id="liveObs"></span></div>
+              <div class="card-b" id="kObsBody"><span class="muted">Waiting for observation…</span></div>
+            </div>
+            <div class="card" id="kFc">
+              <div class="card-h"><span class="card-title">Trajectory Forecast</span><span class="live-dot" id="liveFc"></span></div>
+              <div class="card-b" id="kFcBody"><span class="muted">Waiting for forecast…</span></div>
+            </div>
+            <div class="card" id="kRisk">
+              <div class="card-h"><span class="card-title">Risk &amp; Uncertainty</span><span class="live-dot" id="liveRisk"></span></div>
+              <div class="card-b" id="kRiskBody"><span class="muted">Waiting for risk…</span></div>
+            </div>
+            <div class="card" id="kRoute">
+              <div class="card-h"><span class="card-title">Route Decision</span><span class="live-dot" id="liveRoute"></span></div>
+              <div class="card-b" id="kRouteBody"><span class="muted">Waiting for route…</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!--  ICEBERG ───────────────────────────────────────────────────── -->
+      <section class="view" id="view-iceberg">
+        <div class="card">
+          <div class="card-h"><span class="card-title">Iceberg Intelligence</span></div>
+          <div class="card-b"><table class="kv" id="tIceberg"></table></div>
+        </div>
+      </section>
+
+      <!--  TRAJECTORY ────────────────────────────────────────────────── -->
+      <section class="view" id="view-trajectory">
+        <div class="card">
+          <div class="card-h"><span class="card-title">Trajectory Forecast</span></div>
+          <div class="card-b">
+            <div class="traj-method-banner" id="trajMethodBanner">
+              <span class="muted">No forecast yet</span>
+            </div>
+            <table class="kv" id="tTraj"></table>
+            <div id="mapTraj" class="map map-small"></div>
+          </div>
+        </div>
+      </section>
+
+      <!--  RISK ──────────────────────────────────────────────────────── -->
+      <section class="view" id="view-risk">
+        <div class="card">
+          <div class="card-h"><span class="card-title">Risk &amp; Uncertainty</span></div>
+          <div class="card-b">
+            <div id="riskBadge" class="risk-badge"></div>
+            <table class="kv" id="tRisk"></table>
+          </div>
+        </div>
+      </section>
+
+      <!--  ROUTE ────────────────────────────────────────────────────── -->
+      <section class="view" id="view-route">
+        <div class="card">
+          <div class="card-h"><span class="card-title">Route Decision</span></div>
+          <div class="card-b">
+            <div id="routeBadge" class="route-badge"></div>
+            <table class="kv" id="tRoute"></table>
+          </div>
+        </div>
+      </section>
+
+      <!--  COMMS ────────────────────────────────────────────────────── -->
+      <section class="view" id="view-comms">
+        <div class="card">
+          <div class="card-h"><span class="card-title">Communication — State Machine</span></div>
+          <div class="card-b">
+            <table class="kv" id="tComms"></table>
+            <div class="note" id="commsNote">MQTT is a prototype / SATCOM emulation transport — not a real satellite link.</div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
