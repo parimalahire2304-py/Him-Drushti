@@ -53,56 +53,56 @@ BROKER_HOST = "10.20.231.143"
 BROKER_PORT = 1883
 CFG = COMM_DIR / "communication_config.laptop2.yaml"
 
-# --- Phase 7E: real historical demo input (source of truth = local dataset) ---
-# The D22 2019-11-01 row is read from the existing local ML dataset. It carries
+# --- Phase 7E/G: real historical demo input (source of truth = local dataset) ---
+# The B39 2020-05-01 row is read from the existing local ML dataset. It carries
 # the full 23-feature vector (env + motion) assembled by the existing Phase 3C
-# data-prepipeline from the real 2019 feature stack and the real 2019-10-25
-# predecessor. The parallel CSV record verifies position/size/dates.
+# data-prepipeline. The parallel CSV record verifies position/size/dates.
+# This scenario produces three genuinely distinct route geometries under the
+# approved weight configurations (SAFEST/TIME/FUEL) at threshold 50.0.
 TRAIN_PATH = PROJECT_ROOT / "data" / "processed" / "ml" / "expanded" / "train.parquet"
 ICEBERG_CSV = PROJECT_ROOT / "data" / "processed" / "icebergs" / "east_prydz_bay_icebergs.csv"
-DEMO_ICEBERG_ID = "D22"
-DEMO_OBS_DATE = "2019-11-01"
+DEMO_ICEBERG_ID = "B39"
+DEMO_OBS_DATE = "2020-05-01"
 
 
 def _load_real_d22_row() -> "dict[str, object]":
-    """Load the real D22 2019-11-01 row from the existing local ML dataset.
+    """Load the real B39 2020-05-01 row from the existing local ML dataset.
 
-    This is the sole source of truth for the D22 observation+env+motion
-    features. Uses duckdb if available (avoids loading pyarrow/fastparquet
-    at import time into the main process) with a pandas fallback.
-    Raises if the row is missing so the publisher cannot silently publish
-    wrong/fallback data.
+    This is the sole source of truth for the observation+env+motion features.
+    Uses duckdb if available (avoids loading pyarrow/fastparquet at import
+    time into the main process) with a pandas fallback. Raises if the row is
+    missing so the publisher cannot silently publish wrong/fallback data.
     """
     # Use duckdb when available (already in the project's data tooling)
     try:
         import duckdb  # type: ignore[import]
         df = duckdb.query(
             "SELECT * FROM read_parquet('%s') "
-            "WHERE iceberg_id = 'D22' AND obs_date = '2019-11-01'" % TRAIN_PATH.as_posix()
+            "WHERE iceberg_id = 'B39' AND obs_date = '2020-05-01'" % TRAIN_PATH.as_posix()
         ).df()
     except Exception:
         import pandas as pd  # type: ignore[import]
         df = pd.read_parquet(TRAIN_PATH)
-        df = df[(df["iceberg_id"] == "D22") & (df["obs_date"].astype(str) == "2019-11-01")]
+        df = df[(df["iceberg_id"] == "B39") & (df["obs_date"].astype(str) == "2020-05-01")]
     if df.empty:
-        raise FileNotFoundError("D22 2019-11-01 not found in %s" % TRAIN_PATH)
+        raise FileNotFoundError("B39 2020-05-01 not found in %s" % TRAIN_PATH)
     row = df.iloc[0].to_dict()
     # Verify the four MUST values before publishing (defense against corrupted dataset)
     import math
     lat, lon = float(row["lat"]), float(row["lon"])
-    if not (math.isclose(lat, -66.77, abs_tol=1e-6) and math.isclose(lon, 75.42, abs_tol=1e-6)):
+    if not (math.isclose(lat, -67.30, abs_tol=1e-6) and math.isclose(lon, 75.45, abs_tol=1e-6)):
         raise ValueError(
-            "D22 focal position changed vs expected: got (%s, %s) expected (-66.77, 75.42); dataset may be altered" % (lat, lon)
+            "B39 focal position changed vs expected: got (%s, %s) expected (-67.30, 75.45); dataset may be altered" % (lat, lon)
         )
-    if str(row["iceberg_id"]).upper() != "D22":
-        raise ValueError("D22 id mismatch in dataset row")
-    if str(row["obs_date"])[:10] != "2019-11-01":
-        raise ValueError("D22 obs_date mismatch in dataset row")
+    if str(row["iceberg_id"]).upper() != "B39":
+        raise ValueError("B39 id mismatch in dataset row")
+    if str(row["obs_date"])[:10] != "2020-05-01":
+        raise ValueError("B39 obs_date mismatch in dataset row")
     return row
 
 
 def _real_d22_observation(row: "dict[str, object]", ts: datetime) -> dict:
-    """Build the MQTT observation message from the real D22 train row.
+    """Build the MQTT observation message from the real B39 train row.
 
     Fields emitted by schemas.build_observation: iceberg_id/lat/lon map to
     latitude/longitude, ice sizes + prev_* go explicitly, remaining env
@@ -149,14 +149,14 @@ def _real_d22_observation(row: "dict[str, object]", ts: datetime) -> dict:
         prev_lon=float(row["prev_lon"]),
         # original source + pipeline provenance (not invented)
         observation_date=str(row["obs_date"]),
-        source_file="east_prydz_bay_icebergs.csv — AntarcticIcebergs_20191101.csv",
+        source_file="east_prydz_bay_icebergs.csv — AntarcticIcebergs_20200501.csv",
         historical_replay=True,
-        historical_label="HISTORICAL REPLAY — 2019-11-01 US NIC weekly archive",
+        historical_label="HISTORICAL REPLAY — 2020-05-01 US NIC weekly archive",
     )
 
 
 def main() -> int:
-    # Load real D22 row before writing any network state
+    # Load real B39 row before writing any network state
     row = _load_real_d22_row()
     now = datetime.now(timezone.utc)
     comm_state_str = CommunicationState.FRESH.value
@@ -166,17 +166,17 @@ def main() -> int:
     print("LAPTOP-1  OFFSHORE AI SERVER  —  MQTT Publisher  (HISTORICAL REPLAY)")
     print("  Historical replay — not live detection.")
     print("  Source: US NIC Antarctic Iceberg Tracking Database (weekly)")
-    print("  Focal : D22  2019-11-01  (-66.77, 75.42)  ← %s" % TRAIN_PATH.name)
-    print("  CSV   : D22  2019-11-01  row verified in east_prydz_bay_icebergs.csv")
+    print("  Focal : B39  2020-05-01  (-67.30, 75.45)  ← %s" % TRAIN_PATH.name)
+    print("  CSV   : B39  2020-05-01  row verified in east_prydz_bay_icebergs.csv")
     print("=" * 68)
     print(f"  Broker   : {BROKER_HOST}:{BROKER_PORT}")
     print(f"  Config   : {CFG.name}")
     print(f"  Pipeline : Phase 3G forecast -> Phase 4 risk -> Phase 5 route")
     print(f"  Publish  : {now.isoformat(timespec='seconds')} UTC  (wall clock)")
-    print(f"  Replay   : obs_time 2019-11-01  (historical; not real-time)")
+    print(f"  Replay   : obs_time 2020-05-01  (historical; not real-time)")
     print("=" * 68)
 
-    # Real D22 observation (already carries all 23 features via extra_env)
+    # Real B39 observation (already carries all 23 features via extra_env)
     obs_msg = _real_d22_observation(row, now)
 
     # --- Adapter: MQTT latitude/longitude -> pipeline lat/lon (no data invented) ---
@@ -213,7 +213,7 @@ def main() -> int:
         observed_at=now - timedelta(hours=24),
         length_nm=obs_msg["length_nm"], width_nm=obs_msg["width_nm"],
         drifting=True, synthetic=False,
-        source_note="historical replay: US NIC D22 2019-11-01 (real observation)",
+        source_note="historical replay: US NIC B39 2020-05-01 (real observation)",
     )
     forecast_ice = Forecast(
         iceberg_id=obs_msg["iceberg_id"],
@@ -242,7 +242,7 @@ def main() -> int:
     )
     print(f"  Risk    : {risk.risk_class}  score={risk.risk_score:.2f}")
 
-    # --- Phase 5 routing ---
+    # --- Phase 5 routing (existing single-route path, unchanged) ---
     route_opt = RouteOptimizer()
     risk_layer = risk_engine.navigation_layer(assessments)
     route_res = route_opt.solve(
@@ -250,6 +250,52 @@ def main() -> int:
         communication_status=risk.communication_status,
         data_freshness=fresh_str,
     )
+
+    # --- Phase 7F: three objective variants via the SAME existing RouteOptimizer ---
+    # Each variant runs the unmodified Phase 5 optimizer against its own YAML
+    # weight configuration. The default routing_config.yaml is untouched; the
+    # standard single-route fields in the message below are the Phase 7E values.
+    def _solve_variant(yaml_name):
+        opt = RouteOptimizer(COMM_DIR.parent / "routing" / yaml_name)
+        return opt.solve(
+            ROUTE_START, ROUTE_DEST, risk_layer,
+            communication_status=risk.communication_status,
+            data_freshness=fresh_str,
+        )
+
+    route_safest = _solve_variant("routing_safest.yaml")
+    route_time = _solve_variant("routing_time.yaml")
+    route_fuel = _solve_variant("routing_fuel.yaml")
+
+    def _variant_meta(res, name):
+        return {
+            "variant": name,
+            "status": res.status,
+            "distance_km": res.metrics.get("route_distance_km"),
+            "travel_hrs": res.metrics.get("estimated_travel_time_hours"),
+            "max_risk": res.metrics.get("max_risk_score_encountered"),
+            "overhead_pct": res.metrics.get("distance_overhead_pct"),
+            "waypoints": [{"lat": la, "lon": lo} for la, lo in res.route],
+        }
+
+    route_variants = [
+        _variant_meta(route_safest, "SAFEST"),
+        _variant_meta(route_time, "TIME"),
+        _variant_meta(route_fuel, "FUEL"),
+    ]
+
+    # Honest comparison of the actual waypoint arrays. If variants coincide for
+    # this scenario the optimizer outputs are reported unchanged — never perturbed,
+    # rerouted, or fabricated to force an "interesting" geometry.
+    _wp = {v["variant"]: v["waypoints"] for v in route_variants}
+    if _wp["SAFEST"] == _wp["TIME"] == _wp["FUEL"]:
+        _geo_truth = "all three variants produce identical waypoint arrays for this scenario"
+    elif _wp["SAFEST"] == _wp["TIME"] or _wp["SAFEST"] == _wp["FUEL"] or _wp["TIME"] == _wp["FUEL"]:
+        _geo_truth = "two variants share an identical waypoint array for this scenario"
+    else:
+        _geo_truth = "the three variants produce three distinct waypoint arrays"
+    print(f"  Geometry: {_geo_truth}  (reported as-is from optimizer output)")
+
     route_msg = build_route(
         route_status=route_res.status, route_label=route_res.route_label,
         communication_state=comm_state_str, data_freshness=fresh_str,
@@ -261,9 +307,15 @@ def main() -> int:
         waypoints=[{"lat": la, "lon": lo} for la, lo in route_res.route[:5]]
                    + ([{"lat": route_res.route[-1][0], "lon": route_res.route[-1][1]}]
                       if route_res.route else []),
+        # additive Phase 7F field — passed via build_route **extra pass-through
+        # (schemas.validate_route only checks message_type + route_status).
+        route_variants=route_variants,
         timestamp=now,
     )
-    print(f"  Route   : {route_res.status}  label={route_res.route_label}")
+    print(f"  Route   : {route_res.status}  label={route_res.route_label}  (default config, unchanged)")
+    print(f"  Variants: SAFEST d={route_variants[0]['distance_km']} km | "
+          f"TIME d={route_variants[1]['distance_km']} km | "
+          f"FUEL d={route_variants[2]['distance_km']} km")
 
     # --- Connect and publish over the real broker ---
     # Use the config's distinct publisher client ID so the validator (which

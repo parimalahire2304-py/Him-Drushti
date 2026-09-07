@@ -5,7 +5,8 @@ const LAYER_DEFS = [
   { key: "trajLine", label: "Forecast trajectory", color: "bg-cyan-400" },
   { key: "envelope", label: "Uncertainty envelope", color: "bg-amber-400" },
   { key: "corridor", label: "Risk corridor", color: "bg-red-500" },
-  { key: "route",   label: "Recommended route", color: "bg-green-500" },
+  { key: "route",   label: "Route variants (3)", color: "bg-green-500" },
+  { key: "stations", label: "Indian Research Stations", color: "bg-cyan-500" },
 ];
 
 export default function QuickLayers({ layers, onToggle }) {

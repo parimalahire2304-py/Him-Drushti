@@ -8,6 +8,7 @@ export default {
           bg:    "#070c14",
           panel: "#0f1724",
           border:"#1e2d44",
+          navy:  "#0b1220",
           blue:  "#2e7dff",
           cyan:  "#00d4ff",
           green: "#00e676",
@@ -18,8 +19,8 @@ export default {
         },
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', '"Fira Code"', "ui-monospace", "monospace"],
-        sans: ['"Inter"', "system-ui", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "Consolas", "ui-monospace", "monospace"],
+        sans: ['"Source Sans 3"', "Segoe UI", "system-ui", "sans-serif"],
       },
     },
   },

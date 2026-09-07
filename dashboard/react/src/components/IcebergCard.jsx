@@ -23,6 +23,14 @@ export default function IcebergCard({ obs }) {
     <div className="rounded-md border border-hds-border bg-hds-panel p-3">
       <h3 className="mb-2 text-xs font-bold tracking-widest uppercase text-white flex items-center gap-2">
         <span className="text-hds-amber">▣</span> Iceberg Intelligence
+        {obs.historicalReplay && (
+          <span
+            className="px-1.5 py-0.5 rounded border border-hds-amber/30 bg-hds-amber/8 text-hds-amber text-[8px] font-mono font-bold tracking-wider uppercase"
+            title={obs.historicalLabel || undefined}
+          >
+            Historical Replay
+          </span>
+        )}
       </h3>
       <table className="w-full">
         <tbody>

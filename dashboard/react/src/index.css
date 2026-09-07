@@ -8,13 +8,13 @@
 
 body {
   @apply bg-hds-bg text-hds-text antialiased;
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
 }
 
 /* ── Leaflet dark-theme overrides ─────────────────────────────────────── */
 .leaflet-container {
   @apply bg-hds-bg;
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: "IBM Plex Mono", "Consolas", ui-monospace, monospace;
 }
 
 .leaflet-control-attribution {
@@ -65,6 +65,19 @@ body {
   height: 14px;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
 }
+.hds-icon--station {
+  background: #00d4ff;
+  font-size: 8px;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+}
+.hds-icon--bharati {
+  background: #2e7dff;
+}
+.hds-icon--maitri {
+  background: #00d4ff;
+}
 
 /* ── Legend swatches ──────────────────────────────────────────────────── */
 .legend-swatch {
@@ -98,6 +111,12 @@ body {
 }
 .legend-swatch .line--route {
   border-color: #00e676;
+}
+.legend-swatch .line--time {
+  border-color: #00d4ff;
+}
+.legend-swatch .line--fuel {
+  border-color: #ffb300;
 }
 .legend-swatch .ring {
   display: block;

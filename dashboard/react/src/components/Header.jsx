@@ -17,6 +17,9 @@ export default function Header({ data }) {
         <span className="text-[10px] font-mono text-hds-dim tracking-wide uppercase hidden sm:inline">
           Antarctic Maritime Decision Support
         </span>
+        <span className="px-2 py-0.5 rounded border border-hds-blue/30 text-hds-blue bg-hds-blue/10 text-[9px] font-mono tracking-widest uppercase hidden md:inline">
+          East Prydz Bay
+        </span>
       </div>
 
       {/* right: live indicators */}

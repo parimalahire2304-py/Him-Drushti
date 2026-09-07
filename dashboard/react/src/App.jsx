@@ -6,11 +6,13 @@ import IcebergCard from "./components/IcebergCard";
 import ForecastCard from "./components/ForecastCard";
 import RiskCard from "./components/RiskCard";
 import RouteCard from "./components/RouteCard";
+import RouteOptions from "./components/RouteOptions";
 import CommunicationCard from "./components/CommunicationCard";
 import QuickLayers from "./components/QuickLayers";
 import MapLegend from "./components/MapLegend";
 import OperationalMap from "./components/OperationalMap";
 import useSSE from "./hooks/useSSE";
+import { adaptRouteOptions } from "./lib/payloadAdapter";
 
 /* section ids used by the nav + scroll-to */
 const SECTIONS = [
@@ -24,11 +26,15 @@ const SECTIONS = [
 export default function App() {
   const { data, live } = useSSE();
   const [active, setActive] = useState("overview");
+  const [selectedRoute, setSelectedRoute] = useState("SAFEST");
   const [layers, setLayers] = useState({
-    obs: true, trajLine: true, envelope: true, corridor: true, route: true,
+    obs: true, trajLine: true, envelope: true, corridor: true, route: true, stations: true,
   });
 
   const sectionRefs = useRef({});
+
+  /* Phase 7F: derive route variants from the raw payload */
+  const routeVariants = adaptRouteOptions(data?.route?._raw);
 
   /* nav → scroll to the matching card panel */
   function handleSelect(id) {
@@ -57,12 +63,12 @@ export default function App() {
 
       <div className="flex-1 flex min-h-0">
         {/* ── left nav ─────────────────────────────────────────── */}
-        <Sidebar active={active} onSelect={handleSelect} />
+        <Sidebar active={active} onSelect={handleSelect} data={data} />
 
         {/* ── center: map + environment strip ──────────────────── */}
         <main className="flex-1 flex flex-col min-w-0 min-h-0">
           <div className="relative flex-1 min-h-0 border-b border-hds-border">
-            <OperationalMap obs={obs} fc={fc} risk={risk} route={route} layers={layers} />
+            <OperationalMap obs={obs} fc={fc} risk={risk} route={route} layers={layers} routeVariants={routeVariants} selectedRoute={selectedRoute} />
 
             {/* live badge (top-left above zoom control) */}
             <div className="absolute top-2 left-2 z-[1000] pointer-events-none flex items-center gap-2">
@@ -114,6 +120,9 @@ export default function App() {
           </div>
           <div ref={(el) => (sectionRefs.current.route = el)}>
             <RouteCard route={route} />
+          </div>
+          <div ref={(el) => (sectionRefs.current.routeOptions = el)}>
+            <RouteOptions route={route} routeVariants={routeVariants} selectedRoute={selectedRoute} onSelectRoute={setSelectedRoute} />
           </div>
           <div ref={(el) => (sectionRefs.current.comm = el)}>
             <CommunicationCard data={comm} />
